@@ -8,8 +8,6 @@ I’m a full-stack developer building toward the version of the digital world I 
 
 ### 🧰 Languages and Tools
 
-### 🧰 Languages and Tools
-
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![JavaScript](https://img.shields.io/badge/javascript-%23007ACC.svg?style=for-the-badge&logo=javascript&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
