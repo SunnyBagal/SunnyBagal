@@ -1,48 +1,51 @@
-# 🏄‍♂️ Sunny Bagal
+<h1 align="center">Hey, I'm Sunny 🏄‍♂️</h1>
 
-**Full-stack developer · Backend systems · AI applications**
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&amp;size=20&amp;duration=3000&amp;pause=1200&amp;color=EF4444&amp;center=true&amp;vCenter=true&amp;width=500&amp;lines=Full-stack+developer.;Backend+is+where+I+get+curious.;Exploring+the+world+of+AI.;Always+something+new+to+figure+out." alt="Full-stack developer. Backend is where I get curious. Exploring the world of AI. Always something new to figure out." />
+</p>
 
-I like building things you can use, then figuring out what happens when you really use them. What slows down? What breaks? Can the system recover?
+<p align="center">
+  I turn ideas into software and follow my curiosity into how it all works.<br>
+  Usually somewhere between an API, a database, and one more experiment.
+</p>
 
-That curiosity has taken me from real-time whiteboards and background job pipelines to retrieval-augmented search. I work mostly with TypeScript, Python, PostgreSQL, and Redis, with a growing focus on machine learning and AI systems.
+<br>
 
-## A few things I've built
+<h2 align="center">Languages & Tools</h2>
 
-### [Recall](https://recall.sunnybagal.com) · Find the things you saved
+<h4 align="center">Languages</h4>
 
-A RAG-powered link organizer combining vector search and full-text search, with background ingestion and streaming chat.
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=python,ts,js&amp;theme=dark" alt="Python, TypeScript, JavaScript" />
+</p>
 
-`TypeScript` `PostgreSQL / pgvector` `BullMQ` `SSE`
+<h4 align="center">Backend & Databases</h4>
 
-### [Linea](https://linea.sunnybagal.com) · A shared canvas with a memory
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=nodejs,express,postgres,redis,mongodb,mysql&amp;theme=dark" alt="Node.js, Express, PostgreSQL, Redis, MongoDB, MySQL" />
+</p>
 
-A real-time collaborative whiteboard built around an append-only operation log, replay, and undo. Optimizing replay reduced a 10,000-operation benchmark from **185 ms to 0.53 ms**.
+<h4 align="center">Frontend</h4>
 
-`TypeScript` `Real-time collaboration` `Operation logs`
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=react,nextjs,tailwind,html,css&amp;theme=dark" alt="React, Next.js, Tailwind CSS, HTML, CSS" />
+</p>
 
-### TraceHound · From a reproducible issue to a tested patch
+<h4 align="center">Tools & Infrastructure</h4>
 
-An AI code-repair agent I'm developing, exploring repository graphs, sandboxed execution, and evaluation of generated patches.
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=docker,linux,git,githubactions,prisma&amp;theme=dark" alt="Docker, Linux, Git, GitHub Actions, Prisma" />
+</p>
 
-`TypeScript` `Fastify` `Docker` `PostgreSQL` `Redis`
+<br>
 
-## My toolbox
+<p align="center">
+  <b>Currently curious about</b><br>
+  Machine learning · AI agents · How systems behave when things go wrong
+</p>
 
-| Area | Tools |
-| :--- | :--- |
-| Languages | Python, TypeScript, JavaScript, SQL |
-| Backend | Node.js, Express, Fastify, BullMQ, WebSockets, SSE |
-| Data | PostgreSQL, pgvector, Redis, MongoDB, MySQL |
-| Frontend | React, Next.js, Tailwind CSS |
-| Infrastructure | Docker, Linux, Git, GitHub Actions |
-| AI applications | RAG, embeddings, hybrid retrieval, LLM APIs |
+<br>
 
-## What I'm exploring
-
-- Machine learning through a food-delivery time prediction project.
-- How to give coding agents useful repository context and evaluate their work.
-- The details behind reliable backends: retries, caching, indexing, and recovery.
-
----
-
-*The first working version is where the interesting questions begin.*
+<p align="center">
+  <samp>Build something. Understand it. Make it better.</samp>
+</p>
