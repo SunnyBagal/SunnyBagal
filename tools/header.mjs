@@ -21,7 +21,7 @@ function header(narrow) {
   seed = 41;
   const W = narrow ? 420 : 880, H = narrow ? 210 : 280, cx = W / 2;
   const size = narrow ? 40 : 66, ls = narrow ? 2.5 : 4, nameY = narrow ? 96 : 124, roleY = narrow ? 132 : 170, roleSize = narrow ? 13 : 16;
-  const cw = size * 0.6, L = size * 1.1;            // JetBrains Mono advance is 0.6em
+  const cw = size * 0.6, L = size * 1.1;            // fixed-width cells, like a terminal
   const total = NAME.length * cw + (NAME.length - 1) * ls;
   const x0 = cx - total / 2 - cw * 0.4;
   const k = narrow ? 0.5 : 1;                       // fewer stars on the small banner
@@ -75,10 +75,10 @@ ${layers.map((Ly, li) => `.L${li}{animation:drift ${Ly.dur}s linear infinite}`).
 .neb2{animation:neb2 34s ease-in-out infinite alternate}@keyframes neb2{to{transform:translate(50px,-10px)}}
 .shoot{animation:shoot 9s linear 2.5s infinite;opacity:0}.shoot2{animation:shoot 13s linear 7s infinite;opacity:0}
 @keyframes shoot{0%{transform:translate(0,0);opacity:0}2%{opacity:1}9%{transform:translate(${narrow ? -120 : -230}px,${narrow ? 30 : 48}px);opacity:0}100%{transform:translate(${narrow ? -120 : -230}px,${narrow ? 30 : 48}px);opacity:0}}
-.nm{font-family:'JB',ui-monospace,monospace;font-weight:800;font-size:${size}px}
+.nm{font-family:'CP','Chakra Petch',system-ui,sans-serif;font-weight:700;font-size:${size}px}
 ${reelCss.join('\n')}
-.g{fill:${C.purple};opacity:0;animation:glowOn .5s ease-out both,breathe 3.2s ease-in-out infinite alternate}
-@keyframes glowOn{to{opacity:1}}
+.g{fill:${C.purple};opacity:0;animation:glowOn .7s steps(1) both,breathe 3.2s ease-in-out infinite alternate}
+@keyframes glowOn{0%{opacity:0}15%{opacity:1}30%{opacity:.25}45%{opacity:1}60%{opacity:.45}75%,100%{opacity:1}}
 @keyframes breathe{from{opacity:1}to{opacity:.62}}
 .cur{animation:blink 1s steps(1) ${(lastLock + 0.2).toFixed(2)}s infinite both}@keyframes blink{0%{opacity:1}50%{opacity:0}}
 .role{font-family:'JB',ui-monospace,monospace;font-weight:500;font-size:${roleSize}px;fill:${C.text};fill-opacity:.88;animation:fade .6s ease-out ${(lastLock - 0.1).toFixed(2)}s both}@keyframes fade{from{opacity:0}}
@@ -91,14 +91,16 @@ ${reelCss.join('\n')}
   <linearGradient id="trail" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".15" stop-color="${C.cyan}" stop-opacity=".8"/><stop offset="1" stop-color="${C.purple}" stop-opacity="0"/></linearGradient>
   <clipPath id="win"><rect x="0" y="${(nameY - size * 0.8).toFixed(1)}" width="${W}" height="${(size * 0.95).toFixed(1)}"/></clipPath>
   <linearGradient id="tube" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${C.purple}"/><stop offset=".5" stop-color="#D24DFF"/><stop offset="1" stop-color="${C.pink}"/></linearGradient>
-  <filter id="halo" x="-30%" y="-80%" width="160%" height="260%">
-    <feGaussianBlur in="SourceGraphic" stdDeviation="${narrow ? 5 : 8}" result="a"/>
-    <feGaussianBlur in="SourceGraphic" stdDeviation="${narrow ? 12 : 20}" result="b"/>
-    <feMerge><feMergeNode in="b"/><feMergeNode in="a"/><feMergeNode in="a"/></feMerge>
+  <filter id="halo" x="-30%" y="-120%" width="160%" height="340%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="${narrow ? 4 : 6}" result="a"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="${narrow ? 11 : 18}" result="b"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="${narrow ? 22 : 36}" result="c"/>
+    <feMerge><feMergeNode in="c"/><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="a"/><feMergeNode in="a"/></feMerge>
   </filter>
   <filter id="core" x="-10%" y="-40%" width="120%" height="180%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="b"/><feFlood flood-color="#F5E9FF"/><feComposite in2="b" operator="in" result="w"/>
-    <feMerge><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <feGaussianBlur in="SourceAlpha" stdDeviation="${narrow ? 1.6 : 2.4}" result="b"/><feFlood flood-color="#E2A8FF"/><feComposite in2="b" operator="in" result="w"/>
+    <feGaussianBlur in="SourceAlpha" stdDeviation=".8" result="b2"/><feFlood flood-color="#FFFFFF"/><feComposite in2="b2" operator="in" result="w2"/>
+    <feMerge><feMergeNode in="w"/><feMergeNode in="w"/><feMergeNode in="w2"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
   <filter id="curglow" x="-100%" y="-50%" width="300%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
@@ -116,7 +118,7 @@ ${starLayers}
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="t d">
 <title id="t">Sunny Bagal — backend engineer</title><desc id="d">Sunny Bagal, backend engineer, over a drifting starfield.</desc>
-<style>${face('JB', 800, 'jb800')}${face('JB', 500, 'jb500')}${css}</style>
+<style>${face('CP', 700, 'cp700')}${face('JB', 500, 'jb500')}${css}</style>
 ${body}
 </svg>
 `;
