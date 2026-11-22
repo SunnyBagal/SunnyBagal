@@ -1,44 +1,79 @@
-<!-- HEADER -->
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1e1b4b,100:312e81&height=210&section=header&text=Sunny%20Bagal&fontSize=54&fontColor=f8fafc&fontAlignY=38&desc=Backend%20Engineer%20%C2%B7%20Distributed%20Systems%20%C2%B7%20AI%20Agents&descAlignY=58&descSize=16&descColor=94a3b8&animation=fadeIn" width="100%" />
-</p>
+<a href="https://www.sunnybagal.com">
+  <picture>
+    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/header-dark-narrow.svg">
+    <source media="(max-width: 600px)" srcset="assets/header-light-narrow.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/header-dark.svg">
+    <img alt="Sunny Bagal — backend engineer working in Node.js, TypeScript and PostgreSQL. Build it, measure it, publish the numbers." src="assets/header-light.svg" width="100%">
+  </picture>
+</a>
 
-<!-- TYPING SUBHEADER -->
-<p align="center">
-  <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=16&duration=3000&pause=1200&color=818CF8&center=true&vCenter=true&width=650&lines=Building+resilient+APIs%2C+queues%2C+and+data+pipelines.;Exploring+AI+agents%2C+RAG%2C+and+hybrid+retrieval.;Somewhere+between+a+database+and+one+more+experiment." alt="Typing SVG" />
-  </a>
-</p>
+I build backend systems in TypeScript and PostgreSQL, then load-test them until the numbers hold up. Each project below links to the report its numbers come from.
 
-<!-- BIO -->
-<p align="center">
-  I turn ideas into software and follow my curiosity into how it all works.<br/>
-  Usually somewhere between an API, a database, and one more experiment.
-</p>
+**Open to backend / SDE-1 roles** · Navi Mumbai, open to Bengaluru, Pune or remote<br>
+[sunnybagal.com](https://www.sunnybagal.com) · [LinkedIn](https://www.linkedin.com/in/sunnybagal) · [X](https://x.com/sunny_b11) · [Email](mailto:sunnybagal.1110@gmail.com)
 
-<!-- SOCIAL / CONTACT PILLS -->
-<p align="center">
-  <a href="https://github.com/SunnyBagal">
-    <img src="https://img.shields.io/badge/GitHub-161B22?style=for-the-badge&logo=github&logoColor=F8FAFC" alt="GitHub" />
-  </a>
-  <a href="https://linkedin.com/in/YOUR_LINKEDIN">
-    <img src="https://img.shields.io/badge/LinkedIn-161B22?style=for-the-badge&logo=linkedin&logoColor=38BDF8" alt="LinkedIn" />
-  </a>
-  <a href="mailto:YOUR_EMAIL@gmail.com">
-    <img src="https://img.shields.io/badge/Email-161B22?style=for-the-badge&logo=gmail&logoColor=818CF8" alt="Email" />
-  </a>
-  <a href="https://YOUR_PORTFOLIO_URL">
-    <img src="https://img.shields.io/badge/Portfolio-161B22?style=for-the-badge&logo=vercel&logoColor=F8FAFC" alt="Portfolio" />
-  </a>
-</p>
+## Selected work
 
-<br/>
+### [Linea](https://github.com/SunnyBagal/Linea)
 
-<!-- IDENTITY CODE BLOCK -->
-```ts
-const sunny = {
-  stack:        ["Node.js", "TypeScript", "PostgreSQL", "Redis", "BullMQ"],
-  shipped:      ["TraceHound", "Recall", "Linea"],
-  curiousAbout: ["AI agents", "machine learning", "how systems behave when things go wrong"],
-  basedIn:      "Navi Mumbai · open to Bengaluru, Pune, remote",
-};
+**Collaborative whiteboard on an event-sourced sync engine.** An append-only op log drives live sync, replay and undo, and a chaos harness checks for gaps, duplicates and ordering against the database.
+
+<sub>TypeScript · Node.js · raw ws · PostgreSQL · Prisma · Next.js · Turborepo</sub><br>
+[Code](https://github.com/SunnyBagal/Linea) · [Live](https://linea.sunnybagal.com) · [Load-test report](https://github.com/SunnyBagal/Linea/blob/main/LOADTEST.md)
+
+<a href="https://github.com/SunnyBagal/Linea/blob/main/LOADTEST.md">
+  <picture>
+    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/linea-dark-narrow.svg">
+    <source media="(max-width: 600px)" srcset="assets/linea-light-narrow.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/linea-dark.svg">
+    <img alt="Linea benchmarks: 10k-op replay 188 ms to 0.59 ms; acked ops/s with 20 clients 30 to 894; p95 ack latency 726 ms to 27 ms." src="assets/linea-light.svg" width="100%">
+  </picture>
+</a>
+
+### [Recall](https://github.com/SunnyBagal/Recall)
+
+**RAG link organizer with hybrid retrieval.** pgvector HNSW and Postgres full-text search fused with RRF, evaluated on BEIR SciFact, with 219 tests running against real Postgres and BullMQ.
+
+<sub>TypeScript · Bun · Express · PostgreSQL/pgvector · Drizzle · Redis · BullMQ · Claude API · React</sub><br>
+[Code](https://github.com/SunnyBagal/Recall) · [Live](https://recall.sunnybagal.com) · [Eval results](https://github.com/SunnyBagal/Recall/blob/main/recall-backend/eval/RESULTS.md)
+
+<a href="https://github.com/SunnyBagal/Recall/blob/main/recall-backend/eval/RESULTS.md">
+  <picture>
+    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/recall-dark-narrow.svg">
+    <source media="(max-width: 600px)" srcset="assets/recall-light-narrow.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/recall-dark.svg">
+    <img alt="Recall results: nDCG@10 0.72 on BEIR SciFact vs published BM25 0.665; filtered top-10 recall for a 68-row user 14% to 100%; 5,183 of 5,183 documents ingested with 0 failed jobs." src="assets/recall-light.svg" width="100%">
+  </picture>
+</a>
+
+### [TraceHound](https://github.com/SunnyBagal/TraceHound)
+
+**AI pull-request reviewer, benchmarked against CodeRabbit and Greptile.** Built with coding agents on an open model. I pre-registered a blind, hand-graded benchmark on 29 real-bug PRs and published the full result, including where it lost.
+
+<sub>TypeScript · Node.js · TypeScript Compiler API · GitHub Actions · Nemotron (Nebius) · Next.js</sub><br>
+[Code](https://github.com/SunnyBagal/TraceHound) · [Live](https://tracehound-tau.vercel.app) · [Full result](https://github.com/SunnyBagal/TraceHound/blob/main/docs/bench/ts-heldout.md)
+
+<a href="https://github.com/SunnyBagal/TraceHound/blob/main/docs/bench/ts-heldout.md">
+  <picture>
+    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/tracehound-dark-narrow.svg">
+    <source media="(max-width: 600px)" srcset="assets/tracehound-light-narrow.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/tracehound-dark.svg">
+    <img alt="TraceHound held-out benchmark on 29 real PRs: caught 4 of 20 bugs vs CodeRabbit 10 and Greptile 12; left 2 comments on 9 clean PRs vs 15 and 13; about $0.06 per PR." src="assets/tracehound-light.svg" width="100%">
+  </picture>
+</a>
+
+## Stack
+
+<picture>
+    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/stack-dark-narrow.svg">
+    <source media="(max-width: 600px)" srcset="assets/stack-light-narrow.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/stack-dark.svg">
+    <img alt="Languages: TypeScript, JavaScript, Python, SQL. Backend: Node.js, Express, Bun, REST, WebSockets, SSE, OAuth 2.0. Data and queues: PostgreSQL, pgvector, Redis, BullMQ, MongoDB, Drizzle, Prisma, indexing, full-text search. Cloud and DevOps: AWS (EC2, S3), Docker, GitHub Actions, Linux, Git, Railway, Render, DigitalOcean, Vercel. Testing: Vitest, Supertest, React Testing Library, integration and load testing. AI: Claude API, OpenAI API, RAG, embeddings, hybrid retrieval. Frontend: React, Next.js, Tailwind." src="assets/stack-light.svg" width="100%">
+  </picture>
+
+## Also
+
+- **InteleCorp Software India** (Jan–Apr 2026): led a four-intern team building GeoGrid, a lead-generation platform. Designed a Redis cell cache that serves repeat searches in 1–3 ms.
+- **HackerRank Orchestrate** (Oct 2026, 24-hour solo AI-agent hackathon): rank 238 of 4,094, top 6%.
+
+<p align="center"><samp>Build something. Understand it. Make it better.</samp></p>
