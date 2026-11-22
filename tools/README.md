@@ -1,0 +1,14 @@
+# Profile assets
+
+Every image in the profile README is a self-hosted SVG generated here:
+fonts are embedded and subset, and each image has dark, light and narrow (mobile) variants.
+
+```bash
+cd tools
+npm install
+npm run build   # regenerates ../assets/*.svg and ../README.md
+```
+
+Edit the numbers in `PROJECTS`, the skills in `STACK`, or the colours in `THEMES` inside `gen.mjs`.
+The build prints `OVERFLOW:` if any text no longer fits its tile.
+Fonts: Space Grotesk and JetBrains Mono (SIL Open Font License).
