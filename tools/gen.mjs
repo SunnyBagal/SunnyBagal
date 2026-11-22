@@ -47,116 +47,156 @@ ${body}
 // chamfered box: square corners, top-right corner cut
 const chamfer = (x, y, w, h, c = 12) => `M${x} ${y}H${x + w - c}L${x + w} ${y + c}V${y + h}H${x}Z`;
 
-// ---------- header: synthwave scene + glitching neon name ----------
+// ---------- header: chrome name over a live backend pipeline ----------
 function header(narrow) {
-  const W = narrow ? 420 : 880, H = narrow ? 250 : 300;
-  const hz = narrow ? 178 : 218;        // horizon
+  const W = narrow ? 420 : 880, H = narrow ? 270 : 320;
   const cx = W / 2;
-  const r = narrow ? 60 : 88;           // sun radius
   const name = 'SUNNY BAGAL';
-  const nSize = narrow ? 44 : 72, nLs = narrow ? 3 : 6, nY = narrow ? 64 : 92;
+  const nSize = narrow ? 44 : 72, nLs = narrow ? 3 : 6, nY = narrow ? 62 : 90;
   const role = 'BACKEND ENGINEER  ·  TYPESCRIPT  ·  POSTGRES';
-  const rSize = narrow ? 11.5 : 15, rLs = narrow ? 2 : 3.5, rY = narrow ? 92 : 128;
+  const rSize = narrow ? 11.5 : 15, rLs = narrow ? 2 : 3.5, rY = narrow ? 90 : 124;
   const roleW = tw(role, 600, rSize, rLs);
-  warn('name', tw(name, 700, nSize, nLs), W - 24);
   warn('role', roleW, W - 24);
 
-  // sun stripes (gaps get thicker toward the horizon)
-  const stripes = [];
-  for (let i = 0; i < 6; i++) {
-    const y = hz - r * 0.62 + i * (r * 0.62 / 6) + i * 1.2;
-    stripes.push(`<rect x="${cx - r}" y="${y.toFixed(1)}" width="${2 * r}" height="${(1.2 + i * 1.1).toFixed(1)}" fill="#000"/>`);
+  // name as outlines so each letter can be laser-traced
+  const f = metrics[700];
+  const scale = nSize / f.unitsPerEm;
+  const glyphs = f.stringToGlyphs(name);
+  const total = glyphs.reduce((a, g) => a + g.advanceWidth * scale + nLs, 0) - nLs;
+  warn('name', total, W - 24);
+  let gx = cx - total / 2, d = '';
+  const letters = [];
+  for (const g of glyphs) {
+    const p = g.getPath(gx, nY, nSize).toPathData(2);
+    if (p) letters.push(p);
+    d += p; gx += g.advanceWidth * scale + nLs;
+  }
+  const capTop = nY - nSize * 0.72;
+  const nameDone = 0.2 + letters.length * 0.13 + 0.4;
+
+  // pipeline
+  const nodes = narrow
+    ? [['API', C.pink], ['QUEUE', C.purple], ['POSTGRES', C.cyan]]
+    : [['CLIENT', C.muted], ['API', C.pink], ['QUEUE', C.purple], ['WORKER', C.yellow], ['POSTGRES', C.cyan]];
+  const nW = narrow ? 90 : 124, nH = narrow ? 34 : 44, py = narrow ? 160 : 202;
+  const hz = py + nH / 2 + (narrow ? 16 : 20);
+  const x0 = narrow ? 14 : 34, x1 = W - (narrow ? 14 : 34) - nW;
+  const step = (x1 - x0) / (nodes.length - 1);
+  const nx = nodes.map((_, i) => x0 + i * step);
+  const laneOut = py - 7, laneBack = py + 7;
+  const startX = nx[0] + nW, endX = nx[nodes.length - 1];
+  const D = narrow ? 4.2 : 5.2;          // seconds for a packet to cross
+  const N = 8;                            // packets in flight per lane
+  const t0 = nameDone + 0.6;             // pipeline starts after the name settles
+  // a packet passes through every node; time it reaches node i's left edge
+  const arrive = (i) => ((nx[i] - startX) / (endX - startX)) * D;
+
+  const boxes = nodes.map(([label, col], i) => {
+    const x = nx[i];
+    const hit = i === 0 ? '' : `style="animation-delay:${(t0 + Math.max(0, arrive(i))).toFixed(2)}s"`;
+    const lw = tw(label, 700, narrow ? 10.5 : 12.5, 1.6);
+    warn(label, lw, nW - 10);
+    return `<g>
+  <path d="${chamfer(x, py - nH / 2, nW, nH, 8)}" fill="${C.panel}" stroke="${col}" stroke-opacity=".8"/>
+  ${i === 0 ? '' : `<path class="hit" ${hit} d="${chamfer(x, py - nH / 2, nW, nH, 8)}" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-width="2" filter="url(#soft)"/>`}
+  <rect x="${x}" y="${py - nH / 2}" width="3" height="${nH}" fill="${col}"/>
+  <text x="${x + nW / 2 + 1}" y="${py + (narrow ? 4 : 4.5)}" text-anchor="middle" font-size="${narrow ? 10.5 : 12.5}" font-weight="700" letter-spacing="1.6" fill="${C.text}">${label}</text>
+</g>`;
+  }).join('\n');
+
+  // wires between boxes, two lanes: requests out (pink), acks back (cyan)
+  const wires = [];
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const a = nx[i] + nW, b = nx[i + 1];
+    wires.push(`<line x1="${a}" y1="${laneOut}" x2="${b}" y2="${laneOut}" stroke="${C.pink}" stroke-opacity=".6" filter="url(#soft)"/>`);
+    wires.push(`<line x1="${a}" y1="${laneBack}" x2="${b}" y2="${laneBack}" stroke="${C.cyan}" stroke-opacity=".55" stroke-dasharray="4 4"/>`);
+  }
+  // packets ride over the boxes (boxes are drawn on top, so they look like they pass through)
+  const packet = (y, from, to, col, i, back) => {
+    const begin = (t0 + (back ? D * 0.5 : 0) + (i * D) / N).toFixed(2);
+    return `<g opacity="0"><rect x="${back ? -3 : -27}" y="-2" width="30" height="4" fill="url(#${back ? 'tailL' : 'tailR'}${col.slice(1)})"/><rect x="-4" y="-3.5" width="8" height="7" fill="${col}" filter="url(#pk)"/>
+  <animateMotion path="M${from} ${y}H${to}" dur="${D}s" begin="${begin}s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.06;.94;1" dur="${D}s" begin="${begin}s" repeatCount="indefinite"/></g>`;
+  };
+  const packets = [];
+  for (let i = 0; i < N; i++) {
+    packets.push(packet(laneOut, startX - 4, endX + 4, i % 3 === 2 ? C.yellow : C.pink, i, false));
+    packets.push(packet(laneBack, endX + 4, startX - 4, C.cyan, i, true));
   }
 
-  // perspective floor: vertical lines converge on the vanishing point
-  const vlines = [];
-  const n = narrow ? 9 : 14;
-  for (let i = -n; i <= n; i++) {
-    const xb = cx + i * (narrow ? 34 : 46) * 1.9;
-    vlines.push(`<line x1="${(cx + i * (narrow ? 4 : 6)).toFixed(1)}" y1="${hz}" x2="${xb.toFixed(1)}" y2="${H}"/>`);
-  }
-  // horizontal lines: perspective spacing, each one slides to the next position (seamless loop)
-  const hl = [];
-  const hcss = [];
-  const K = 9;
-  const pos = (k) => hz + (H - hz) * Math.pow(k / K, 2.1);
-  for (let k = 0; k < K + 1; k++) {
+  const vlines = [], hl = [], hcss = [];
+  const vn = narrow ? 9 : 14;
+  for (let i = -vn; i <= vn; i++) vlines.push(`<line x1="${(cx + i * (narrow ? 5 : 8)).toFixed(1)}" y1="${hz}" x2="${(cx + i * (narrow ? 64 : 88)).toFixed(1)}" y2="${H}"/>`);
+  const K = 7, pos = (k) => hz + (H - hz) * Math.pow(k / K, 2);
+  for (let k = 0; k <= K; k++) {
     const y0 = pos(k), y1 = pos(k + 1);
     hl.push(`<line class="h${k}" x1="0" y1="${y0.toFixed(2)}" x2="${W}" y2="${y0.toFixed(2)}"/>`);
-    hcss.push(`.h${k}{animation:m${k} 1.6s linear infinite}@keyframes m${k}{to{transform:translateY(${(y1 - y0).toFixed(2)}px)}}`);
+    hcss.push(`.h${k}{animation:m${k} 1.4s linear infinite}@keyframes m${k}{to{transform:translateY(${(y1 - y0).toFixed(2)}px)}}`);
   }
-
-  // neon triangle from the avatar, behind the sun
-  const tTop = narrow ? hz - 72 : hz - 76, tHalf = narrow ? 108 : 150;
-  const tri = `${cx - tHalf},${tTop} ${cx + tHalf},${tTop} ${cx + (narrow ? 6 : 10)},${hz + 4}`;
-
   const css = `
 ${hcss.join('\n')}
-.on{animation:on 1.4s steps(1) .2s both}
-@keyframes on{0%{opacity:0}10%{opacity:1}14%{opacity:.15}20%{opacity:1}32%{opacity:.4}36%{opacity:1}}
-.gc{animation:gc 5s steps(1) 1.6s infinite}
-.gp{animation:gp 5s steps(1) 1.6s infinite}
-@keyframes gc{0%,86%,100%{transform:translate(-2px,0)}88%{transform:translate(-9px,1px)}90%{transform:translate(5px,-2px)}92%{transform:translate(-4px,0)}94%{transform:translate(-2px,0)}}
-@keyframes gp{0%,86%,100%{transform:translate(2px,0)}88%{transform:translate(8px,-1px)}90%{transform:translate(-6px,2px)}92%{transform:translate(4px,0)}94%{transform:translate(2px,0)}}
-.slice{animation:slice 5s steps(1) 1.6s infinite}
-@keyframes slice{0%,87%,93%,100%{transform:translateX(0);opacity:0}88%{transform:translateX(14px);opacity:1}90%{transform:translateX(-10px);opacity:1}}
-.typed{animation:reveal 1.8s steps(${role.length}) 1.3s both}
+.trace{stroke-dasharray:1 1;animation:draw .75s cubic-bezier(.5,0,.3,1) both}
+@keyframes draw{from{stroke-dashoffset:1}}
+.fillin{animation:fillin .9s ease-out ${nameDone.toFixed(2)}s both}
+@keyframes fillin{from{opacity:0}}
+.sheen{animation:sheen 6s ease-in-out ${(nameDone + 0.9).toFixed(2)}s infinite}
+@keyframes sheen{0%{transform:translateX(${-W * 0.25}px)}35%,100%{transform:translateX(${W * 1.1}px)}}
+.typed{animation:reveal 1.4s steps(${role.length}) ${(nameDone + 0.2).toFixed(2)}s both}
 @keyframes reveal{from{width:0}}
-.tri{animation:pulse 4s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.55}}
-.sun{animation:rise 1.6s cubic-bezier(.2,.7,.2,1) both}
-@keyframes rise{from{transform:translateY(${r * 0.6}px)}}
+.pipe{animation:pipe .8s ease-out ${(nameDone + 0.1).toFixed(2)}s both}
+@keyframes pipe{from{opacity:0;transform:translateY(8px)}}
+.hit{opacity:0;animation:hit ${(D / N).toFixed(3)}s ease-out infinite}
+@keyframes hit{0%{opacity:1}60%,100%{opacity:0}}
+.band{animation:drift 9s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateY(10px)}}
 `;
-  const nameText = (extra = '') => `<text x="${cx}" y="${nY}" text-anchor="middle" font-size="${nSize}" font-weight="700" letter-spacing="${nLs}" ${extra}>${name}</text>`;
   const body = `
 <defs>
-  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#07051A"/><stop offset=".55" stop-color="#1A0B3F"/>
-    <stop offset=".86" stop-color="#4B0F66"/><stop offset="1" stop-color="#C2187A"/>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#07051A"/><stop offset=".5" stop-color="#140A36"/><stop offset="1" stop-color="#0B0722"/>
   </linearGradient>
-  <linearGradient id="sunfill" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="${C.yellow}"/><stop offset=".5" stop-color="${C.orange}"/><stop offset="1" stop-color="${C.pink}"/>
+  <linearGradient id="bandg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="${C.purple}" stop-opacity="0"/><stop offset=".35" stop-color="${C.purple}" stop-opacity=".35"/>
+    <stop offset=".55" stop-color="${C.pink}" stop-opacity=".45"/><stop offset=".8" stop-color="#3B5BFF" stop-opacity=".25"/><stop offset="1" stop-color="#3B5BFF" stop-opacity="0"/>
   </linearGradient>
-  <linearGradient id="floorfade" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset=".35" stop-color="#fff"/>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><rect x="10" y="10" width="1.4" height="1.4" fill="${C.muted}" opacity=".35"/></pattern>
+  <linearGradient id="chrome" gradientUnits="userSpaceOnUse" x1="0" y1="${capTop}" x2="0" y2="${nY}">
+    <stop offset="0" stop-color="#F2FCFF"/><stop offset=".42" stop-color="#8FDCFF"/><stop offset=".5" stop-color="#3A8BE0"/>
+    <stop offset=".5" stop-color="#2A0E52"/><stop offset=".6" stop-color="#8A1E9E"/><stop offset=".82" stop-color="${C.pink}"/><stop offset="1" stop-color="${C.yellow}"/>
   </linearGradient>
-  <mask id="sunmask" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${hz}" fill="#fff"/>${stripes.join('')}</mask>
-  <mask id="floormask" maskUnits="userSpaceOnUse" x="0" y="${hz}" width="${W}" height="${H - hz}"><rect y="${hz}" width="${W}" height="${H - hz}" fill="url(#floorfade)"/></mask>
-  <clipPath id="floorclip"><rect y="${hz}" width="${W}" height="${H - hz}"/></clipPath>
-  <clipPath id="skyclip"><rect width="${W}" height="${hz}"/></clipPath>
+  <linearGradient id="sheengrad" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <clipPath id="nameclip"><path d="${d}"/></clipPath>
   <clipPath id="roleclip"><rect class="typed" x="${cx - roleW / 2 - 2}" y="${rY - rSize - 4}" width="${roleW + 8}" height="${rSize + 10}"/></clipPath>
-  <clipPath id="band"><rect x="0" y="${nY - nSize * 0.42}" width="${W}" height="${nSize * 0.16}"/></clipPath>
-  <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="${narrow ? 4 : 6}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="neon" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="${narrow ? 3.5 : 5}" result="b"/><feFlood flood-color="${C.pink}"/><feComposite in2="b" operator="in" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="sunglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+  <filter id="pk" x="-200%" y="-400%" width="500%" height="900%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="blur" x="0" y="-50%" width="100%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+  ${[C.pink, C.yellow, C.cyan].map((c) => `<linearGradient id="tailR${c.slice(1)}" x1="0" x2="1"><stop offset="0" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="${c}"/></linearGradient><linearGradient id="tailL${c.slice(1)}" x1="1" x2="0"><stop offset="0" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="${c}"/></linearGradient>`).join('')}
+  <linearGradient id="floorfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".4" stop-color="#fff"/></linearGradient>
+  <mask id="floormask" maskUnits="userSpaceOnUse" x="0" y="${hz}" width="${W}" height="${H - hz}"><rect y="${hz}" width="${W}" height="${H - hz}" fill="url(#floorfade)"/></mask>
+  <clipPath id="floorclip"><rect y="${hz}" width="${W}" height="${H - hz}"/></clipPath>
 </defs>
-<rect width="${W}" height="${H}" fill="${C.bg}"/>
-<rect width="${W}" height="${hz}" fill="url(#sky)"/>
-<g clip-path="url(#skyclip)">
-  <polygon class="tri" points="${tri}" fill="none" stroke="${C.purple}" stroke-width="${narrow ? 2.5 : 3}" filter="url(#soft)"/>
-  <g class="sun">
-    <circle cx="${cx}" cy="${hz}" r="${r * 1.05}" fill="${C.pink}" opacity=".45" filter="url(#sunglow)"/>
-    <circle cx="${cx}" cy="${hz}" r="${r}" fill="url(#sunfill)" mask="url(#sunmask)"/>
-  </g>
-</g>
-<rect y="${hz}" width="${W}" height="${H - hz}" fill="#0A0619"/>
-<g clip-path="url(#floorclip)" mask="url(#floormask)" stroke="${C.pink}" stroke-width="1.3" filter="url(#soft)">
-  ${vlines.join('')}
-  ${hl.join('')}
-</g>
-<line x1="0" y1="${hz}" x2="${W}" y2="${hz}" stroke="${C.pink}" stroke-width="2" filter="url(#glow)"/>
+<rect width="${W}" height="${H}" fill="url(#bg)"/>
+<rect class="band" x="-20" y="${py - (narrow ? 70 : 90)}" width="${W + 40}" height="${narrow ? 130 : 160}" fill="url(#bandg)" filter="url(#blur)"/>
+<rect width="${W}" height="${hz}" fill="url(#dots)"/>
+<rect y="${hz}" width="${W}" height="${H - hz}" fill="#090619"/>
+<g clip-path="url(#floorclip)" mask="url(#floormask)" stroke="${C.pink}" stroke-width="1.2" filter="url(#soft)">${vlines.join('')}${hl.join('')}</g>
+<line x1="0" y1="${hz}" x2="${W}" y2="${hz}" stroke="${C.pink}" stroke-width="2" filter="url(#soft)"/>
 
-<g class="on">
-  <g class="gc" opacity=".9">${nameText(`fill="${C.cyan}"`)}</g>
-  <g class="gp" opacity=".9">${nameText(`fill="${C.pink}"`)}</g>
-  ${nameText(`fill="${C.text}" filter="url(#neon)"`)}
-  <g class="slice" clip-path="url(#band)">${nameText(`fill="${C.cyan}"`)}</g>
-</g>
+<path class="fillin" d="${d}" fill="${C.pink}" opacity=".55" filter="url(#neon)"/>
+<path class="fillin" d="${d}" fill="url(#chrome)"/>
+<g clip-path="url(#nameclip)"><g class="sheen"><rect x="0" y="${capTop - 10}" width="${nSize * 0.9}" height="${nSize}" fill="url(#sheengrad)" transform="skewX(-20)"/></g></g>
+<g fill="none" stroke="${C.pink}" stroke-width="${narrow ? 1.4 : 1.8}" stroke-linejoin="round" filter="url(#soft)">${letters.map((p, i) => `<path class="trace" style="animation-delay:${(0.2 + i * 0.13).toFixed(2)}s" d="${p}" pathLength="1"/>`).join('')}</g>
 <g clip-path="url(#roleclip)"><text x="${cx}" y="${rY}" text-anchor="middle" font-size="${rSize}" font-weight="600" letter-spacing="${rLs}" fill="${C.cyan}">${esc(role)}</text></g>
+
+<g class="pipe">
+${wires.join('\n')}
+${packets.join('\n')}
+${boxes}
+</g>
 `;
   return svgDoc({ w: W, h: H, title: 'Sunny Bagal — backend engineer',
-    desc: 'Sunny Bagal. Backend engineer working in TypeScript and Postgres.', css, body, weights: [600, 700] });
+    desc: 'Sunny Bagal, backend engineer. Requests flow from client to API, through a queue and worker, into Postgres, with acknowledgements flowing back.', css, body, weights: [600, 700] });
 }
 
 // ---------- project metric strips ----------
@@ -184,14 +224,14 @@ function tiles({ title, desc, accent, items }, narrow) {
       return `<rect x="${barX}" y="${by}" width="${barW}" height="3" fill="${C.lineSoft}"/>` +
         `<rect class="bar" style="animation-delay:${(0.3 + i * 0.12 + j * 0.08).toFixed(2)}s" x="${barX}" y="${by}" width="${w.toFixed(1)}" height="3" fill="${b.hi ? accent : C.dim}"/>`;
     }).join('');
-    return `<g class="tile" style="animation-delay:${(i * 0.08).toFixed(2)}s" transform="translate(${x},${y})">
+    return `<g transform="translate(${x},${y})"><g class="tile" style="animation-delay:${(i * 0.08).toFixed(2)}s">
 <path d="${chamfer(0.5, 0.5, tW - 1, tH - 1)}" fill="${C.panel}" stroke="${C.line}"/>
 <rect x="0" y="0" width="3" height="${tH}" fill="${accent}"/>
 <text x="${pad}" y="24" font-size="12" font-weight="600" letter-spacing="1.4" fill="${C.muted}">${esc(label)}</text>
 <text x="${pad - 1}" y="54" font-size="30" font-weight="700" fill="${C.text}">${esc(t.value)}<tspan font-size="14" font-weight="600" fill="${C.muted}" dx="4">${esc(t.unit || '')}</tspan></text>
 <text x="${tW - pad}" y="53" text-anchor="end" font-size="13" font-weight="500" fill="${C.muted}">${esc(t.cmp)}</text>
 ${bars}
-</g>`;
+</g></g>`;
   }).join('\n');
   const H = narrow ? items.length * tH + (items.length - 1) * gap : tH;
   return svgDoc({ w: W, h: H, title, desc, css, body: parts });
@@ -199,7 +239,7 @@ ${bars}
 
 const PROJECTS = {
   linea: {
-    accent: C.pink,
+    name: 'Linea', accent: C.pink,
     title: 'Linea — load-test results',
     desc: '10k-op replay: 188 ms to 0.59 ms. Acked ops per second with 20 clients: 30 to 894. p95 ack latency: 726 ms to 27 ms.',
     items: [
@@ -209,7 +249,7 @@ const PROJECTS = {
     ],
   },
   recall: {
-    accent: C.cyan,
+    name: 'Recall', accent: C.cyan,
     title: 'Recall — evaluation results',
     desc: 'nDCG@10 on BEIR SciFact: 0.72 versus the published BM25 0.665. Filtered top-10 recall for a 68-row user: 14% to 100%. Ingestion: 5,183 of 5,183 documents, 0 failed jobs.',
     items: [
@@ -219,7 +259,7 @@ const PROJECTS = {
     ],
   },
   tracehound: {
-    accent: C.yellow,
+    name: 'TraceHound', accent: C.yellow,
     title: 'TraceHound — held-out benchmark',
     desc: 'On 29 real pull requests: TraceHound caught 4 of 20 bugs, CodeRabbit 10, Greptile 12. Comments on the 9 clean PRs: TraceHound 2, CodeRabbit 15, Greptile 13. About $0.06 per PR on an open model.',
     items: [
@@ -229,6 +269,24 @@ const PROJECTS = {
     ],
   },
 };
+
+// ---------- project title bars: neon divider + big name ----------
+function titleBar(name, accent, narrow, divider = true) {
+  const top = divider ? (narrow ? 18 : 24) : 0;
+  const W = narrow ? 420 : 800, H = (narrow ? 52 : 60) + top;
+  const size = narrow ? 28 : 34, y = H - 12;
+  const label = name.toUpperCase();
+  const css = `.nm{animation:slide .7s cubic-bezier(.2,.7,.2,1) .1s both}@keyframes slide{from{opacity:0;transform:translateX(-12px)}}
+.ln{transform-box:fill-box;transform-origin:left center;animation:grow 1s cubic-bezier(.2,.7,.2,1) both}@keyframes grow{from{transform:scaleX(0)}}`;
+  const body = `<defs>
+  <linearGradient id="div" x1="0" x2="1"><stop offset="0" stop-color="${accent}"/><stop offset=".55" stop-color="${C.purple}" stop-opacity=".7"/><stop offset="1" stop-color="${C.purple}" stop-opacity="0"/></linearGradient>
+  <filter id="g" x="-10%" y="-60%" width="120%" height="220%"><feGaussianBlur in="SourceAlpha" stdDeviation="4" result="b"/><feFlood flood-color="${accent}" flood-opacity=".8"/><feComposite in2="b" operator="in" result="gl"/><feMerge><feMergeNode in="gl"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+${divider ? `<rect class="ln" x="0" y="${top}" width="${W}" height="2" fill="url(#div)"/>
+<path d="M0 ${top - 4}H18L24 ${top + 2}H0Z" fill="${accent}"/>` : ''}
+<text class="nm" x="0" y="${y}" font-size="${size}" font-weight="700" letter-spacing="3" fill="${accent}" filter="url(#g)">${esc(label)}</text>`;
+  return svgDoc({ w: W, h: H, title: name, desc: `${name} project`, css, body, weights: [700] });
+}
 
 // ---------- stack ----------
 const icon = (slug) => Object.values(si).find((i) => i && i.slug === slug);
@@ -304,6 +362,9 @@ for (const narrow of [false, true]) {
   const sfx = narrow ? '-narrow.svg' : '.svg';
   fs.writeFileSync(path.join(OUT, `header${sfx}`), header(narrow));
   fs.writeFileSync(path.join(OUT, `stack${sfx}`), stack(narrow));
-  for (const [k, p] of Object.entries(PROJECTS)) fs.writeFileSync(path.join(OUT, `${k}${sfx}`), tiles(p, narrow));
+  for (const [k, p] of Object.entries(PROJECTS)) {
+    fs.writeFileSync(path.join(OUT, `${k}${sfx}`), tiles(p, narrow));
+    fs.writeFileSync(path.join(OUT, `${k}-title${sfx}`), titleBar(p.name, p.accent, narrow, k !== 'linea'));
+  }
 }
 console.log(fs.readdirSync(OUT).map((f) => `${f} ${(fs.statSync(path.join(OUT, f)).size / 1024).toFixed(1)}KB`).join('\n'));
