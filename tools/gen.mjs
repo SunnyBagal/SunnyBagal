@@ -47,158 +47,6 @@ ${body}
 // chamfered box: square corners, top-right corner cut
 const chamfer = (x, y, w, h, c = 12) => `M${x} ${y}H${x + w - c}L${x + w} ${y + c}V${y + h}H${x}Z`;
 
-// ---------- header: chrome name over a live backend pipeline ----------
-function header(narrow) {
-  const W = narrow ? 420 : 880, H = narrow ? 270 : 320;
-  const cx = W / 2;
-  const name = 'SUNNY BAGAL';
-  const nSize = narrow ? 44 : 72, nLs = narrow ? 3 : 6, nY = narrow ? 62 : 90;
-  const role = 'BACKEND ENGINEER  ·  TYPESCRIPT  ·  POSTGRES';
-  const rSize = narrow ? 11.5 : 15, rLs = narrow ? 2 : 3.5, rY = narrow ? 90 : 124;
-  const roleW = tw(role, 600, rSize, rLs);
-  warn('role', roleW, W - 24);
-
-  // name as outlines so each letter can be laser-traced
-  const f = metrics[700];
-  const scale = nSize / f.unitsPerEm;
-  const glyphs = f.stringToGlyphs(name);
-  const total = glyphs.reduce((a, g) => a + g.advanceWidth * scale + nLs, 0) - nLs;
-  warn('name', total, W - 24);
-  let gx = cx - total / 2, d = '';
-  const letters = [];
-  for (const g of glyphs) {
-    const p = g.getPath(gx, nY, nSize).toPathData(2);
-    if (p) letters.push(p);
-    d += p; gx += g.advanceWidth * scale + nLs;
-  }
-  const capTop = nY - nSize * 0.72;
-  const nameDone = 0.2 + letters.length * 0.13 + 0.4;
-
-  // pipeline
-  const nodes = narrow
-    ? [['API', C.pink], ['QUEUE', C.purple], ['POSTGRES', C.cyan]]
-    : [['CLIENT', C.muted], ['API', C.pink], ['QUEUE', C.purple], ['WORKER', C.yellow], ['POSTGRES', C.cyan]];
-  const nW = narrow ? 90 : 124, nH = narrow ? 34 : 44, py = narrow ? 160 : 202;
-  const hz = py + nH / 2 + (narrow ? 16 : 20);
-  const x0 = narrow ? 14 : 34, x1 = W - (narrow ? 14 : 34) - nW;
-  const step = (x1 - x0) / (nodes.length - 1);
-  const nx = nodes.map((_, i) => x0 + i * step);
-  const laneOut = py - 7, laneBack = py + 7;
-  const startX = nx[0] + nW, endX = nx[nodes.length - 1];
-  const D = narrow ? 4.2 : 5.2;          // seconds for a packet to cross
-  const N = 8;                            // packets in flight per lane
-  const t0 = nameDone + 0.6;             // pipeline starts after the name settles
-  // a packet passes through every node; time it reaches node i's left edge
-  const arrive = (i) => ((nx[i] - startX) / (endX - startX)) * D;
-
-  const boxes = nodes.map(([label, col], i) => {
-    const x = nx[i];
-    const hit = i === 0 ? '' : `style="animation-delay:${(t0 + Math.max(0, arrive(i))).toFixed(2)}s"`;
-    const lw = tw(label, 700, narrow ? 10.5 : 12.5, 1.6);
-    warn(label, lw, nW - 10);
-    return `<g>
-  <path d="${chamfer(x, py - nH / 2, nW, nH, 8)}" fill="${C.panel}" stroke="${col}" stroke-opacity=".8"/>
-  ${i === 0 ? '' : `<path class="hit" ${hit} d="${chamfer(x, py - nH / 2, nW, nH, 8)}" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-width="2" filter="url(#soft)"/>`}
-  <rect x="${x}" y="${py - nH / 2}" width="3" height="${nH}" fill="${col}"/>
-  <text x="${x + nW / 2 + 1}" y="${py + (narrow ? 4 : 4.5)}" text-anchor="middle" font-size="${narrow ? 10.5 : 12.5}" font-weight="700" letter-spacing="1.6" fill="${C.text}">${label}</text>
-</g>`;
-  }).join('\n');
-
-  // wires between boxes, two lanes: requests out (pink), acks back (cyan)
-  const wires = [];
-  for (let i = 0; i < nodes.length - 1; i++) {
-    const a = nx[i] + nW, b = nx[i + 1];
-    wires.push(`<line x1="${a}" y1="${laneOut}" x2="${b}" y2="${laneOut}" stroke="${C.pink}" stroke-opacity=".6" filter="url(#soft)"/>`);
-    wires.push(`<line x1="${a}" y1="${laneBack}" x2="${b}" y2="${laneBack}" stroke="${C.cyan}" stroke-opacity=".55" stroke-dasharray="4 4"/>`);
-  }
-  // packets ride over the boxes (boxes are drawn on top, so they look like they pass through)
-  const packet = (y, from, to, col, i, back) => {
-    const begin = (t0 + (back ? D * 0.5 : 0) + (i * D) / N).toFixed(2);
-    return `<g opacity="0"><rect x="${back ? -3 : -27}" y="-2" width="30" height="4" fill="url(#${back ? 'tailL' : 'tailR'}${col.slice(1)})"/><rect x="-4" y="-3.5" width="8" height="7" fill="${col}" filter="url(#pk)"/>
-  <animateMotion path="M${from} ${y}H${to}" dur="${D}s" begin="${begin}s" repeatCount="indefinite"/>
-  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.06;.94;1" dur="${D}s" begin="${begin}s" repeatCount="indefinite"/></g>`;
-  };
-  const packets = [];
-  for (let i = 0; i < N; i++) {
-    packets.push(packet(laneOut, startX - 4, endX + 4, i % 3 === 2 ? C.yellow : C.pink, i, false));
-    packets.push(packet(laneBack, endX + 4, startX - 4, C.cyan, i, true));
-  }
-
-  const vlines = [], hl = [], hcss = [];
-  const vn = narrow ? 9 : 14;
-  for (let i = -vn; i <= vn; i++) vlines.push(`<line x1="${(cx + i * (narrow ? 5 : 8)).toFixed(1)}" y1="${hz}" x2="${(cx + i * (narrow ? 64 : 88)).toFixed(1)}" y2="${H}"/>`);
-  const K = 7, pos = (k) => hz + (H - hz) * Math.pow(k / K, 2);
-  for (let k = 0; k <= K; k++) {
-    const y0 = pos(k), y1 = pos(k + 1);
-    hl.push(`<line class="h${k}" x1="0" y1="${y0.toFixed(2)}" x2="${W}" y2="${y0.toFixed(2)}"/>`);
-    hcss.push(`.h${k}{animation:m${k} 1.4s linear infinite}@keyframes m${k}{to{transform:translateY(${(y1 - y0).toFixed(2)}px)}}`);
-  }
-  const css = `
-${hcss.join('\n')}
-.trace{stroke-dasharray:1 1;animation:draw .75s cubic-bezier(.5,0,.3,1) both}
-@keyframes draw{from{stroke-dashoffset:1}}
-.fillin{animation:fillin .9s ease-out ${nameDone.toFixed(2)}s both}
-@keyframes fillin{from{opacity:0}}
-.sheen{animation:sheen 6s ease-in-out ${(nameDone + 0.9).toFixed(2)}s infinite}
-@keyframes sheen{0%{transform:translateX(${-W * 0.25}px)}35%,100%{transform:translateX(${W * 1.1}px)}}
-.typed{animation:reveal 1.4s steps(${role.length}) ${(nameDone + 0.2).toFixed(2)}s both}
-@keyframes reveal{from{width:0}}
-.pipe{animation:pipe .8s ease-out ${(nameDone + 0.1).toFixed(2)}s both}
-@keyframes pipe{from{opacity:0;transform:translateY(8px)}}
-.hit{opacity:0;animation:hit ${(D / N).toFixed(3)}s ease-out infinite}
-@keyframes hit{0%{opacity:1}60%,100%{opacity:0}}
-.band{animation:drift 9s ease-in-out infinite alternate}
-@keyframes drift{to{transform:translateY(10px)}}
-`;
-  const body = `
-<defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#07051A"/><stop offset=".5" stop-color="#140A36"/><stop offset="1" stop-color="#0B0722"/>
-  </linearGradient>
-  <linearGradient id="bandg" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="${C.purple}" stop-opacity="0"/><stop offset=".35" stop-color="${C.purple}" stop-opacity=".35"/>
-    <stop offset=".55" stop-color="${C.pink}" stop-opacity=".45"/><stop offset=".8" stop-color="#3B5BFF" stop-opacity=".25"/><stop offset="1" stop-color="#3B5BFF" stop-opacity="0"/>
-  </linearGradient>
-  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><rect x="10" y="10" width="1.4" height="1.4" fill="${C.muted}" opacity=".35"/></pattern>
-  <linearGradient id="chrome" gradientUnits="userSpaceOnUse" x1="0" y1="${capTop}" x2="0" y2="${nY}">
-    <stop offset="0" stop-color="#F2FCFF"/><stop offset=".42" stop-color="#8FDCFF"/><stop offset=".5" stop-color="#3A8BE0"/>
-    <stop offset=".5" stop-color="#2A0E52"/><stop offset=".6" stop-color="#8A1E9E"/><stop offset=".82" stop-color="${C.pink}"/><stop offset="1" stop-color="${C.yellow}"/>
-  </linearGradient>
-  <linearGradient id="sheengrad" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  <clipPath id="nameclip"><path d="${d}"/></clipPath>
-  <clipPath id="roleclip"><rect class="typed" x="${cx - roleW / 2 - 2}" y="${rY - rSize - 4}" width="${roleW + 8}" height="${rSize + 10}"/></clipPath>
-  <filter id="neon" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="${narrow ? 3.5 : 5}" result="b"/><feFlood flood-color="${C.pink}"/><feComposite in2="b" operator="in" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="pk" x="-200%" y="-400%" width="500%" height="900%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="blur" x="0" y="-50%" width="100%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
-  ${[C.pink, C.yellow, C.cyan].map((c) => `<linearGradient id="tailR${c.slice(1)}" x1="0" x2="1"><stop offset="0" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="${c}"/></linearGradient><linearGradient id="tailL${c.slice(1)}" x1="1" x2="0"><stop offset="0" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="${c}"/></linearGradient>`).join('')}
-  <linearGradient id="floorfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".4" stop-color="#fff"/></linearGradient>
-  <mask id="floormask" maskUnits="userSpaceOnUse" x="0" y="${hz}" width="${W}" height="${H - hz}"><rect y="${hz}" width="${W}" height="${H - hz}" fill="url(#floorfade)"/></mask>
-  <clipPath id="floorclip"><rect y="${hz}" width="${W}" height="${H - hz}"/></clipPath>
-</defs>
-<rect width="${W}" height="${H}" fill="url(#bg)"/>
-<rect class="band" x="-20" y="${py - (narrow ? 70 : 90)}" width="${W + 40}" height="${narrow ? 130 : 160}" fill="url(#bandg)" filter="url(#blur)"/>
-<rect width="${W}" height="${hz}" fill="url(#dots)"/>
-<rect y="${hz}" width="${W}" height="${H - hz}" fill="#090619"/>
-<g clip-path="url(#floorclip)" mask="url(#floormask)" stroke="${C.pink}" stroke-width="1.2" filter="url(#soft)">${vlines.join('')}${hl.join('')}</g>
-<line x1="0" y1="${hz}" x2="${W}" y2="${hz}" stroke="${C.pink}" stroke-width="2" filter="url(#soft)"/>
-
-<path class="fillin" d="${d}" fill="${C.pink}" opacity=".55" filter="url(#neon)"/>
-<path class="fillin" d="${d}" fill="url(#chrome)"/>
-<g clip-path="url(#nameclip)"><g class="sheen"><rect x="0" y="${capTop - 10}" width="${nSize * 0.9}" height="${nSize}" fill="url(#sheengrad)" transform="skewX(-20)"/></g></g>
-<g fill="none" stroke="${C.pink}" stroke-width="${narrow ? 1.4 : 1.8}" stroke-linejoin="round" filter="url(#soft)">${letters.map((p, i) => `<path class="trace" style="animation-delay:${(0.2 + i * 0.13).toFixed(2)}s" d="${p}" pathLength="1"/>`).join('')}</g>
-<g clip-path="url(#roleclip)"><text x="${cx}" y="${rY}" text-anchor="middle" font-size="${rSize}" font-weight="600" letter-spacing="${rLs}" fill="${C.cyan}">${esc(role)}</text></g>
-
-<g class="pipe">
-${wires.join('\n')}
-${packets.join('\n')}
-${boxes}
-</g>
-`;
-  return svgDoc({ w: W, h: H, title: 'Sunny Bagal — backend engineer',
-    desc: 'Sunny Bagal, backend engineer. Requests flow from client to API, through a queue and worker, into Postgres, with acknowledgements flowing back.', css, body, weights: [600, 700] });
-}
-
 // ---------- project metric strips ----------
 function tiles({ title, desc, accent, items }, narrow) {
   const W = narrow ? 420 : 800, gap = narrow ? 8 : 10;
@@ -288,6 +136,40 @@ ${divider ? `<rect class="ln" x="0" y="${top}" width="${W}" height="2" fill="url
   return svgDoc({ w: W, h: H, title: name, desc: `${name} project`, css, body, weights: [700] });
 }
 
+// ---------- experience & achievements ----------
+const EXP = [
+  { accent: C.pink, label: 'Experience', title: 'InteleCorp Software India', sub: 'Software Engineering Intern · Jan–Apr 2026',
+    line: 'Led 4 interns building GeoGrid, a lead-gen platform', value: '1–3 ms', cap: 'repeat searches, Redis cell cache' },
+  { accent: C.yellow, label: 'Achievement', title: 'HackerRank Orchestrate', sub: 'AI-agent hackathon · Oct 2026',
+    line: 'Solo, 24 hours, against 4,094 participants', value: 'Top 6%', cap: 'rank 238' },
+];
+function experience(narrow) {
+  const W = narrow ? 420 : 800, gap = 12;
+  const cW = narrow ? W : (W - gap) / 2, cH = 168, pad = 20;
+  const css = `.card{animation:fade .6s ease-out both}@keyframes fade{from{opacity:0;transform:translateY(6px)}}`;
+  const cards = EXP.map((e, i) => {
+    const x = narrow ? 0 : i * (cW + gap), y = narrow ? i * (cH + gap) : 0;
+    const max = cW - pad * 2;
+    warn(e.title, tw(e.title, 700, 22), max); warn(e.sub, tw(e.sub, 500, 14), max); warn(e.line, tw(e.line, 500, 14), max);
+    const vW = tw(e.value, 700, 30);
+    warn(e.cap, pad + vW + 12 + tw(e.cap, 500, 14), cW - pad);
+    return `<g transform="translate(${x},${y})"><g class="card" style="animation-delay:${i * 0.1}s">
+<path d="${chamfer(0.5, 0.5, cW - 1, cH - 1, 14)}" fill="${C.panel}" stroke="${C.line}"/>
+<rect x="0" y="0" width="3" height="${cH}" fill="${e.accent}"/>
+<text x="${pad}" y="28" font-size="12" font-weight="700" letter-spacing="1.8" fill="${e.accent}">${esc(e.label.toUpperCase())}</text>
+<text x="${pad}" y="58" font-size="22" font-weight="700" fill="${C.text}">${esc(e.title)}</text>
+<text x="${pad}" y="81" font-size="14" font-weight="500" fill="${C.muted}">${esc(e.sub)}</text>
+<text x="${pad}" y="104" font-size="14" font-weight="500" fill="${C.text}" fill-opacity=".85">${esc(e.line)}</text>
+<line x1="${pad}" y1="118" x2="${cW - pad}" y2="118" stroke="${C.lineSoft}"/>
+<text x="${pad - 1}" y="152" font-size="30" font-weight="700" fill="${C.text}">${esc(e.value)}</text>
+<text x="${pad + vW + 12}" y="151" font-size="14" font-weight="500" fill="${C.muted}">${esc(e.cap)}</text>
+</g></g>`;
+  }).join('\n');
+  const H = narrow ? EXP.length * cH + (EXP.length - 1) * gap : cH;
+  return svgDoc({ w: W, h: H, title: 'Experience and achievements',
+    desc: EXP.map((e) => `${e.label}: ${e.title}, ${e.sub}. ${e.line}. ${e.value}, ${e.cap}.`).join(' '), css, body: cards });
+}
+
 // ---------- stack ----------
 const icon = (slug) => Object.values(si).find((i) => i && i.slug === slug);
 const lum = (hex) => { const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
@@ -360,8 +242,8 @@ ${out.join('\n')}`;
 for (const f of fs.readdirSync(OUT)) if (f.endsWith('.svg')) fs.unlinkSync(path.join(OUT, f));
 for (const narrow of [false, true]) {
   const sfx = narrow ? '-narrow.svg' : '.svg';
-  fs.writeFileSync(path.join(OUT, `header${sfx}`), header(narrow));
   fs.writeFileSync(path.join(OUT, `stack${sfx}`), stack(narrow));
+  fs.writeFileSync(path.join(OUT, `experience${sfx}`), experience(narrow));
   for (const [k, p] of Object.entries(PROJECTS)) {
     fs.writeFileSync(path.join(OUT, `${k}${sfx}`), tiles(p, narrow));
     fs.writeFileSync(path.join(OUT, `${k}-title${sfx}`), titleBar(p.name, p.accent, narrow, k !== 'linea'));

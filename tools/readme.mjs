@@ -49,6 +49,8 @@ ${P.map(project).join('\n')}
 
 ${pic('stack', 'Languages: TypeScript, JavaScript, Python, SQL. Backend: Node.js, Express, Bun, REST, WebSockets, SSE, OAuth 2.0. Data: PostgreSQL, pgvector, Redis, BullMQ, MongoDB, Drizzle, Prisma. Cloud: AWS, Docker, GitHub Actions, Linux, Git, Railway, Render, DigitalOcean, Vercel. Testing: Vitest, Supertest, React Testing Library, load testing. AI: Claude API, OpenAI API, RAG, embeddings, hybrid retrieval. Frontend: React, Next.js, Tailwind.')}
 
-<sub>Previously led a four-intern team building GeoGrid at InteleCorp · HackerRank Orchestrate: rank 238 of 4,094</sub>
+## Experience & Achievements
+
+${pic('experience', 'Experience: Software Engineering Intern at InteleCorp Software India, Jan to Apr 2026; led four interns building GeoGrid, a lead-generation platform; Redis cell cache served repeat searches in 1 to 3 ms. Achievement: HackerRank Orchestrate, Oct 2026, a 24-hour solo AI-agent hackathon; rank 238 of 4,094, top 6%.')}
 `;
 fs.writeFileSync(process.argv[2], md);
