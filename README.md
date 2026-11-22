@@ -72,4 +72,9 @@ A GitHub Action that reviews TypeScript pull requests on an open model. One revi
     <img alt="Languages: TypeScript, JavaScript, Python, SQL. Backend: Node.js, Express, Bun, REST, WebSockets, SSE, OAuth 2.0. Data: PostgreSQL, pgvector, Redis, BullMQ, MongoDB, Drizzle, Prisma. Cloud: AWS, Docker, GitHub Actions, Linux, Git, Railway, Render, DigitalOcean, Vercel. Testing: Vitest, Supertest, React Testing Library, load testing. AI: Claude API, OpenAI API, RAG, embeddings, hybrid retrieval. Frontend: React, Next.js, Tailwind." src="assets/stack.svg" width="100%">
   </picture>
 
-<sub>Previously led a four-intern team building GeoGrid at InteleCorp · HackerRank Orchestrate: rank 238 of 4,094</sub>
+## Experience & Achievements
+
+<picture>
+    <source media="(max-width: 600px)" srcset="assets/experience-narrow.svg">
+    <img alt="Experience: Software Engineering Intern at InteleCorp Software India, Jan to Apr 2026; led four interns building GeoGrid, a lead-generation platform; Redis cell cache served repeat searches in 1 to 3 ms. Achievement: HackerRank Orchestrate, Oct 2026, a 24-hour solo AI-agent hackathon; rank 238 of 4,094, top 6%." src="assets/experience.svg" width="100%">
+  </picture>

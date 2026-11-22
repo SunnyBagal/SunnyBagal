@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node gen.mjs ../assets && node readme.mjs ../README.md"
+    "build": "node gen.mjs ../assets && node header.mjs ../assets && node readme.mjs ../README.md"
   },
   "dependencies": {
     "opentype.js": "^2.0.0",

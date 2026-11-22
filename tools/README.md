@@ -11,4 +11,5 @@ npm run build   # regenerates ../assets/*.svg and ../README.md
 
 Edit the numbers in `PROJECTS`, the skills in `STACK`, or the colours in `C` inside `gen.mjs`.
 The build prints `OVERFLOW:` if any text no longer fits its tile.
-Fonts: Chakra Petch (SIL Open Font License).
+The banner lives in `header.mjs`; everything else in `gen.mjs`.
+Fonts: Chakra Petch and JetBrains Mono (SIL Open Font License).
